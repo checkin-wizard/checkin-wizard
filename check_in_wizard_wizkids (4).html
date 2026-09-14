@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check-in Wizard & WizKids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wizardRed: '#d11242',
+                        wizardBlue: '#2e3192',
+                        wizkidsCyan: '#00adef',
+                        wizkidsRed: '#ed1c24'
+                    },
+                    animation: {
+                        'gradient-x': 'gradient-x 3s ease infinite',
+                        'bounce-slow': 'bounce 3s infinite',
+                    },
+                    keyframes: {
+                        'gradient-x': {
+                            '0%, 100%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'left center'
+                            },
+                            '50%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'right center'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=Montserrat:wght@700;900&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f8fafc; 
+            background-image: linear-gradient(to bottom right, #f8fafc, #e2e8f0);
+            min-height: 100vh;
+        }
+        
+        h1, h2, .font-title { font-family: 'Montserrat', sans-serif; }
+
+        .canvas-container { 
+            position: relative; width: 100%; max-width: 400px; margin: 0 auto; 
+            aspect-ratio: 1/1; overflow: hidden; border-radius: 0.5rem; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
+            border: 1px solid #e2e8f0;
+            background-color: #000;
+        }
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+        
+        /* Custom Range Slider */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: var(--slider-color, #d11242); cursor: pointer; margin-top: -7px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s;}
+        input[type=range]::-webkit-slider-thumb:active { transform: scale(1.1); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #cbd5e1; border-radius: 2px; }
+        
+        /* Hide scrollbar for stickers */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .sticker-btn { transition: all 0.2s ease; border-radius: 12px; }
+        .sticker-btn.active { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #94a3b8 !important; }
+        .sticker-btn.active::after { content: '✓'; position: absolute; top: -6px; right: -6px; background: #10b981; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Header Elegante -->
+    <header class="bg-white shadow-sm py-5 mb-6 border-b border-gray-100">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-2xl font-black tracking-tight text-gray-800">
+                Check-in <span class="text-wizardRed">Experience</span>
+            </h1>
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-widest mt-1">Capture seu momento</p>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 flex flex-col items-center pb-10">
+        <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
+            
+            <div id="initialSetup">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-title text-gray-800">Vamos começar?</h2>
+                    <p class="text-gray-500 text-sm mt-2">Selecione sua modalidade para configurar a lente.</p>
+                </div>
+
+                <div class="mb-8">
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="marca" value="wizard" class="peer sr-only" checked>
+                            <div class="p-5 border border-gray-200 rounded-xl text-center peer-checked:border-wizardRed peer-checked:ring-1 peer-checked:ring-wizardRed transition-all duration-200 hover:border-gray-300 bg-gray-50 peer-checked:bg-white shadow-sm">
+                                <span class="font-black font-title text-wizardBlue block text-lg mb-1">Wizard</span>
+                                <span class="text-[10px] text-gray-500 uppercase font-semibold tracking-wide">Adultos & Teens</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="marca" value="wizkids" class="peer sr-only">
+                            <div class="p-5 border border-gray-200 rounded-xl text-center peer-checked:border-wizkidsCyan peer-checked:ring-1 peer-checked:ring-wizkidsCyan transition-all duration-200 hover:border-gray-300 bg-gray-50 peer-checked:bg-white shadow-sm">
+                                <span class="font-black font-title text-wizkidsRed block text-lg mb-1">WizKids</span>
+                                <span class="text-[10px] text-gray-500 uppercase font-semibold tracking-wide">Crianças</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Botão de Câmera Clean -->
+                <div class="mb-2 flex justify-center">
+                    <button id="btnAbrirCamera" class="w-full inline-flex items-center justify-center px-6 py-4 text-lg font-bold rounded-xl text-white bg-gray-900 hover:bg-gray-800 transition-colors shadow-lg">
+                        <i class="fas fa-camera text-xl mr-3"></i> Tirar Foto Agora
+                    </button>
+                </div>
+            </div>
+            
+            <div id="editorArea" class="hidden animate-fade-in-up">
+                
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-800"><i class="fas fa-magic text-wizardRed mr-1"></i> Sua Obra de Arte</h2>
+                    <button id="btnVoltar" class="text-sm font-semibold text-gray-500 hover:text-wizardRed transition"><i class="fas fa-redo mr-1"></i> Refazer</button>
+                </div>
+
+                <div class="canvas-container bg-gray-100 mb-4 cursor-grab active:cursor-grabbing">
+                    <canvas id="canvasPreview" width="1080" height="1080"></canvas>
+                </div>
+                
+                <div class="flex items-center justify-between gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100 mb-5">
+                    <i class="fas fa-search-minus text-gray-400 text-sm"></i>
+                    <input type="range" id="zoomControl" min="0.5" max="2.5" step="0.05" value="1" class="flex-grow">
+                    <i class="fas fa-search-plus text-gray-400 text-sm"></i>
+                </div>
+
+                <!-- Controles do Adesivo Selecionado (Oculto por padrão) -->
+                <div id="stickerControls" class="hidden bg-gray-800 text-white p-3 rounded-xl mb-4 flex-col gap-2 shadow-lg border border-gray-700 animate-fade-in-up">
+                    <div class="flex justify-between items-center w-full mb-1">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400"><i class="fas fa-arrows-alt mr-1"></i> Adesivo Selecionado</span>
+                        <button id="btnRemoverAdesivo" class="bg-red-500/20 text-red-400 hover:bg-red-500/40 px-2 py-1 rounded text-xs font-bold transition flex items-center">
+                            <i class="fas fa-trash-alt mr-1"></i> Excluir
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-compress-alt text-gray-400 text-xs"></i>
+                        <input type="range" id="stickerScale" min="0.3" max="3" step="0.05" value="1" class="flex-grow" style="--slider-color: #ffffff;">
+                        <i class="fas fa-expand-alt text-gray-400 text-xs"></i>
+                    </div>
+                </div>
+
+                <!-- Seção de Stickers -->
+                <div class="mb-6">
+                    <div class="flex items-center mb-3">
+                        <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider mr-2">Novo!</span>
+                        <p class="text-sm font-bold text-gray-700">Toque para adicionar adesivos:</p>
+                    </div>
+                    <div class="flex overflow-x-auto gap-3 pb-4 pt-1 hide-scrollbar px-1" id="stickerContainer">
+                        <!-- Stickers gerados via JS -->
+                    </div>
+                </div>
+
+                <div class="text-center pt-4 border-t border-gray-100">
+                    <div class="grid grid-cols-2 gap-3 mb-2">
+                        <button id="compartilharBtn" class="w-full relative overflow-hidden group inline-flex items-center justify-center px-4 py-4 font-bold rounded-xl text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg transform hover:scale-[1.02]">
+                            <i class="fab fa-instagram text-xl mr-2"></i> Story / Zap
+                        </button>
+                        <button id="baixarBtn" class="w-full relative overflow-hidden group inline-flex items-center justify-center px-4 py-4 font-bold rounded-xl text-white bg-gray-900 hover:bg-black transition-all shadow-lg transform hover:scale-[1.02]">
+                            <i class="fas fa-download text-xl mr-2"></i> Baixar
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-400 font-medium">A imagem será salva na sua galeria.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="cameraModal" class="hidden fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div class="w-full h-full max-w-md mx-auto flex flex-col relative">
+                
+                <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
+                    <span class="bg-black/50 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-md border border-white/20"><i class="fas fa-video text-red-500 animate-pulse mr-2"></i>Câmera Ativa</span>
+                    <button id="btnFecharCamera" class="bg-black/50 text-white w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 hover:bg-red-500 transition"><i class="fas fa-times text-xl"></i></button>
+                </div>
+
+                <div class="flex-grow flex flex-col items-center justify-center relative w-full h-full overflow-hidden">
+                    <!-- Guia de Enquadramento -->
+                    <div class="absolute z-10 w-[80%] aspect-square border-2 border-dashed border-white/50 rounded-xl pointer-events-none flex items-center justify-center">
+                        <div class="text-white/50 text-center opacity-70">
+                            <i class="fas fa-user mb-2 text-2xl"></i>
+                            <p class="text-sm font-medium">Posicione seu rosto aqui</p>
+                        </div>
+                    </div>
+                    
+                    <video id="videoStream" class="w-full h-full object-cover -scale-x-100 bg-gray-900" autoplay playsinline></video>
+                    
+                    <div id="cameraError" class="hidden absolute text-red-100 bg-red-900/90 backdrop-blur-md p-4 rounded-xl border border-red-500 text-sm text-center mx-6 font-medium z-20">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2 text-red-400"></i><br>
+                        Não foi possível acessar a câmera. Verifique as permissões do seu navegador.
+                    </div>
+                </div>
+
+                <div class="absolute bottom-10 left-0 right-0 flex justify-center z-10">
+                    <button id="btnCapturar" class="h-20 w-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border-2 border-white/30 hover:bg-white/30 transition-all">
+                        <div class="h-16 w-16 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] flex items-center justify-center transform transition-transform hover:scale-90">
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Configurações de Stickers Disponíveis
+        const stickersConfig = [
+            { id: 'nenhum', text: 'Nenhum', color: '#6b7280', bg: '#f3f4f6', marca: 'ambas' },
+            { id: 'aluno', text: 'SOU ALUNO', text2: 'WIZARD', color: '#d11242', bg: '#ffffff', icon: '🎓', marca: 'wizard' },
+            { id: 'aluna', text: 'SOU ALUNA', text2: 'WIZARD', color: '#d11242', bg: '#ffffff', icon: '🎓', marca: 'wizard' },
+            { id: 'pai', text: 'SOU PAI', text2: 'WIZARD', color: '#2e3192', bg: '#ffffff', icon: '🦸‍♂️', marca: 'ambas' },
+            { id: 'mae', text: 'SOU MÃE', text2: 'WIZARD', color: '#d11242', bg: '#ffffff', icon: '🦸‍♀️', marca: 'ambas' },
+            { id: 'time', text: 'TIME WIZARD', text2: 'GRUPO SORRISO', color: '#2e3192', bg: '#fce000', icon: '⭐', marca: 'ambas' },
+            { id: 'estrela', text: 'SUPER', text2: 'STAR', color: '#333333', bg: '#fce000', icon: '⭐', marca: 'wizkids' },
+            { id: 'calm', text: 'stay calm', text2: "I'm unlocking", color: '#333333', bg: '#00adef', icon: '🔓', font: '"Comic Sans MS", "Chalkboard SE"', marca: 'wizard' },
+            { id: 'destravando', text: 'DESTRAVANDO...', text2: '', color: '#333333', bg: '#ed1c24', icon: '🔓', font: '"Comic Sans MS", "Chalkboard SE"', marca: 'wizard' },
+            
+            // Stickers Personagens WizKids (Nomes atualizados 1.png até 9.png)
+            { id: 'char_wiz', type: 'image', src: '1.png', marca: 'wizkids' },
+            { id: 'char_joe', type: 'image', src: '2.png', marca: 'wizkids' },
+            { id: 'char_sue', type: 'image', src: '3.png', marca: 'wizkids' },
+            { id: 'char_akio', type: 'image', src: '4.png', marca: 'wizkids' },
+            { id: 'char_alice', type: 'image', src: '5.png', marca: 'wizkids' },
+            { id: 'char_bobby', type: 'image', src: '6.png', marca: 'wizkids' },
+            { id: 'char_clara', type: 'image', src: '7.png', marca: 'wizkids' },
+            { id: 'char_skyler', type: 'image', src: '8.png', marca: 'wizkids' },
+            { id: 'char_spot', type: 'image', src: '9.png', marca: 'wizkids' }
+        ];
+
+        let selectedStickerId = 'nenhum';
+
+        // Carregar imagens dos stickers antecipadamente
+        const loadedStickerImages = {};
+        stickersConfig.filter(s => s.type === 'image').forEach(s => {
+            const img = new Image();
+            img.src = s.src;
+            loadedStickerImages[s.id] = img;
+        });
+
+        // Referências do DOM
+        const canvas = document.getElementById('canvasPreview');
+        const ctx = canvas.getContext('2d');
+        const baixarBtn = document.getElementById('baixarBtn');
+        const radiosMarca = document.getElementsByName('marca');
+        const editorArea = document.getElementById('editorArea');
+        const initialSetup = document.getElementById('initialSetup');
+        const zoomControl = document.getElementById('zoomControl');
+        const btnVoltar = document.getElementById('btnVoltar');
+        const stickerContainer = document.getElementById('stickerContainer');
+
+        const btnAbrirCamera = document.getElementById('btnAbrirCamera');
+        const cameraModal = document.getElementById('cameraModal');
+        const videoStream = document.getElementById('videoStream');
+        const btnFecharCamera = document.getElementById('btnFecharCamera');
+        const btnCapturar = document.getElementById('btnCapturar');
+        const cameraError = document.getElementById('cameraError');
+        let streamInfo = null;
+
+        // Variáveis de estado
+        let imagemUsuario = null;
+        let scale = 1;
+        let baseScale = 1;
+        let panX = 0;
+        let panY = 0;
+        let isDragging = false;
+        let startX, startY;
+        let currentMarca = 'wizard';
+
+        // Variáveis do Sistema Multi-Stickers
+        let placedStickers = [];
+        let activeStickerIndex = -1;
+        let draggingSticker = false;
+        const stickerControls = document.getElementById('stickerControls');
+        const stickerScale = document.getElementById('stickerScale');
+        const btnRemoverAdesivo = document.getElementById('btnRemoverAdesivo');
+
+        // Carregando as Logos (Nomes atualizados conforme pasta)
+        const logoWizard = new Image();
+        logoWizard.src = 'logo wizard.png';
+        const logoWizkids = new Image();
+        logoWizkids.src = 'logo wizkids.png';
+
+        const CANVAS_SIZE = 1080;
+
+        // Inicializar UI de Stickers
+        function initStickers() {
+            stickerContainer.innerHTML = '';
+            
+            // Filtra os adesivos pela marca selecionada
+            const filteredStickers = stickersConfig.filter(s => s.id !== 'nenhum' && (s.marca === 'ambas' || s.marca === currentMarca));
+            
+            filteredStickers.forEach(stk => {
+                const btn = document.createElement('button');
+                btn.className = `sticker-btn relative flex-shrink-0 flex flex-col items-center justify-center w-20 h-20 rounded-xl border-2 bg-white border-gray-100 shadow-sm overflow-hidden hover:border-wizardRed transition-colors`;
+                
+                btn.onclick = () => {
+                    adicionarAdesivoNaTela(stk.id);
+                };
+
+                if (stk.type === 'image') {
+                    btn.innerHTML = `<img src="${stk.src}" class="w-full h-full object-cover">`;
+                } else {
+                    btn.innerHTML = `
+                        <div class="w-full h-8 flex items-center justify-center" style="background-color: ${stk.bg}">
+                            <span class="text-lg">${stk.icon}</span>
+                        </div>
+                        <div class="w-full flex-1 flex flex-col items-center justify-center p-1 leading-tight">
+                            <span class="text-[8px] font-black truncate w-full text-center" style="color: ${stk.color}">${stk.text}</span>
+                            ${stk.text2 ? `<span class="text-[8px] font-black truncate w-full text-center" style="color: ${stk.color}">${stk.text2}</span>` : ''}
+                        </div>
+                    `;
+                }
+                stickerContainer.appendChild(btn);
+            });
+        }
+        
+        initStickers();
+
+        // --- SISTEMA MULTI-STICKERS LÓGICA ---
+        
+        function adicionarAdesivoNaTela(stkId) {
+            const stkConfig = stickersConfig.find(s => s.id === stkId);
+            if(!stkConfig) return;
+
+            // Define dimensões base para cálculos de clique e desenho
+            let baseW = stkConfig.type === 'image' ? 300 : 380;
+            let baseH = stkConfig.type === 'image' ? 300 : 130;
+            // Define uma leve rotação aleatória ao entrar
+            let rot = (Math.random() * 20 - 10) * Math.PI / 180; 
+
+            placedStickers.push({
+                id: stkId,
+                config: stkConfig,
+                x: CANVAS_SIZE / 2, // Nasce no centro
+                y: CANVAS_SIZE / 2,
+                baseW: baseW,
+                baseH: baseH,
+                scale: 1,
+                rotation: rot
+            });
+
+            activeStickerIndex = placedStickers.length - 1;
+            atualizarUIControlesAdesivo();
+            renderCanvas();
+        }
+
+        function atualizarUIControlesAdesivo() {
+            if (activeStickerIndex !== -1 && placedStickers[activeStickerIndex]) {
+                stickerControls.classList.remove('hidden');
+                stickerControls.classList.add('flex');
+                stickerScale.value = placedStickers[activeStickerIndex].scale;
+            } else {
+                stickerControls.classList.add('hidden');
+                stickerControls.classList.remove('flex');
+            }
+        }
+
+        stickerScale.addEventListener('input', (e) => {
+            if (activeStickerIndex !== -1) {
+                placedStickers[activeStickerIndex].scale = parseFloat(e.target.value);
+                renderCanvas();
+            }
+        });
+
+        btnRemoverAdesivo.addEventListener('click', () => {
+            if (activeStickerIndex !== -1) {
+                placedStickers.splice(activeStickerIndex, 1);
+                activeStickerIndex = -1;
+                atualizarUIControlesAdesivo();
+                renderCanvas();
+            }
+        });
+
+        // Eventos Marca
+        radiosMarca.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                currentMarca = e.target.value;
+                zoomControl.style.setProperty('--slider-color', currentMarca === 'wizard' ? '#d11242' : '#00adef');
+                
+                placedStickers = []; // Limpa os adesivos ao trocar de marca
+                activeStickerIndex = -1;
+                atualizarUIControlesAdesivo();
+                initStickers();
+                
+                if (imagemUsuario) renderCanvas();
+            });
+        });
+
+        btnVoltar.addEventListener('click', () => {
+            imagemUsuario = null;
+            placedStickers = [];
+            activeStickerIndex = -1;
+            atualizarUIControlesAdesivo();
+            editorArea.classList.add('hidden');
+            initialSetup.classList.remove('hidden');
+        });
+
+        // Função utilitária para pegar posição do mouse/touch no canvas
+        function getCanvasPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            // Calcula a proporção real do canvas em relação à tela (CSS scale)
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            
+            if(e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        // Verifica se clicou em cima de um adesivo
+        function getHitStickerIndex(px, py) {
+            // Varre de trás pra frente (para pegar o adesivo que está "por cima")
+            for(let i = placedStickers.length - 1; i >= 0; i--) {
+                const s = placedStickers[i];
+                // Calcula a distância do clique até o centro do adesivo
+                const dx = px - s.x;
+                const dy = py - s.y;
+                // Aplica a rotação inversa para checar colisão em um retângulo reto
+                const rx = dx * Math.cos(-s.rotation) - dy * Math.sin(-s.rotation);
+                const ry = dx * Math.sin(-s.rotation) + dy * Math.cos(-s.rotation);
+
+                const hw = (s.baseW * s.scale) / 2;
+                const hh = (s.baseH * s.scale) / 2;
+
+                if(rx >= -hw && rx <= hw && ry >= -hh && ry <= hh) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        // Eventos de Zoom e Pan (Mouse e Touch) atualizados
+        zoomControl.addEventListener('input', (e) => {
+            if (!imagemUsuario) return;
+            const oldScale = scale;
+            scale = baseScale * parseFloat(e.target.value);
+            const canvasCenterX = CANVAS_SIZE / 2;
+            const canvasCenterY = CANVAS_SIZE / 2;
+            panX = canvasCenterX - ((canvasCenterX - panX) * (scale / oldScale));
+            panY = canvasCenterY - ((canvasCenterY - panY) * (scale / oldScale));
+            renderCanvas();
+        });
+
+        canvas.addEventListener('mousedown', startDrag);
+        canvas.addEventListener('mousemove', drag);
+        window.addEventListener('mouseup', endDrag);
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            startDrag({ clientX: touch.clientX, clientY: touch.clientY });
+        }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            drag(e);
+        }, { passive: false });
+        window.addEventListener('touchend', endDrag);
+
+        function startDrag(e) {
+            if (!imagemUsuario) return;
+            const pos = getCanvasPos(e);
+
+            // 1. Tenta selecionar um adesivo
+            const hitIndex = getHitStickerIndex(pos.x, pos.y);
+            
+            if(hitIndex !== -1) {
+                activeStickerIndex = hitIndex;
+                draggingSticker = true;
+                isDragging = false;
+                
+                // Calcula offset para o adesivo não "pular" pro centro do mouse
+                const s = placedStickers[hitIndex];
+                startX = pos.x - s.x;
+                startY = pos.y - s.y;
+                
+                // Traz o adesivo para frente (move para o final do array)
+                const sticker = placedStickers.splice(hitIndex, 1)[0];
+                placedStickers.push(sticker);
+                activeStickerIndex = placedStickers.length - 1;
+
+            } else {
+                // 2. Se não clicou em adesivo, movimenta a foto de fundo
+                activeStickerIndex = -1;
+                draggingSticker = false;
+                isDragging = true;
+                startX = pos.x - panX;
+                startY = pos.y - panY;
+            }
+            
+            atualizarUIControlesAdesivo();
+            renderCanvas();
+        }
+
+        function drag(e) {
+            if (!imagemUsuario) return;
+            const pos = getCanvasPos(e);
+
+            if (draggingSticker && activeStickerIndex !== -1) {
+                placedStickers[activeStickerIndex].x = pos.x - startX;
+                placedStickers[activeStickerIndex].y = pos.y - startY;
+                renderCanvas();
+            } else if (isDragging) {
+                panX = pos.x - startX;
+                panY = pos.y - startY;
+                renderCanvas();
+            }
+        }
+
+        function endDrag() { 
+            isDragging = false; 
+            draggingSticker = false;
+        }
+
+        // Core Render Engine
+        function renderCanvas() {
+            if (!imagemUsuario) return;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+            ctx.drawImage(imagemUsuario, panX, panY, imagemUsuario.width * scale, imagemUsuario.height * scale);
+            desenharIdentidadeVisual(ctx, currentMarca);
+            desenharStickersCanvas(ctx);
+        }
+
+        // Desenhar Multi-Stickers
+        function desenharStickersCanvas(ctx) {
+            placedStickers.forEach((stk, index) => {
+                ctx.save();
+                
+                ctx.translate(stk.x, stk.y);
+                ctx.rotate(stk.rotation);
+                ctx.scale(stk.scale, stk.scale);
+
+                if (stk.config.type === 'image') {
+                    const img = loadedStickerImages[stk.config.id];
+                    if (img && img.complete) {
+                        const imgSize = stk.baseW;
+                        
+                        // Sombra realista, sem fundo branco (Personagem flutuante)
+                        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                        ctx.shadowBlur = 20;
+                        ctx.shadowOffsetY = 15;
+                        ctx.shadowOffsetX = 0;
+
+                        const scaleX = imgSize / img.width;
+                        const scaleY = imgSize / img.height;
+                        const imgScale = Math.max(scaleX, scaleY);
+                        const drawW = img.width * imgScale;
+                        const drawH = img.height * imgScale;
+                        
+                        ctx.drawImage(img, -drawW/2, -drawH/2, drawW, drawH);
+                    }
+                } else {
+                    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowOffsetY = 10;
+                    ctx.shadowOffsetX = 0;
+
+                    ctx.fillStyle = stk.config.bg;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 10; 
+                    ctx.beginPath();
+                    
+                    ctx.roundRect(-stk.baseW/2, -stk.baseH/2, stk.baseW, stk.baseH, 40);
+                    ctx.fill();
+                    
+                    ctx.shadowColor = 'transparent';
+                    ctx.stroke(); 
+
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    const fontBase = stk.config.font || 'Arial';
+                    ctx.fillStyle = stk.config.color;
+                    
+                    if (stk.config.text2) {
+                        ctx.font = `900 32px ${fontBase}`;
+                        ctx.fillText(`${stk.config.icon} ${stk.config.text}`, 0, -18);
+                        ctx.font = `900 45px ${fontBase}`;
+                        ctx.fillText(stk.config.text2, 0, 25);
+                    } else {
+                        ctx.font = `900 38px ${fontBase}`;
+                        ctx.fillText(`${stk.config.icon} ${stk.config.text}`, 0, 0);
+                    }
+                }
+
+                // Desenha a caixa de seleção se for o ativo
+                if (index === activeStickerIndex) {
+                    ctx.strokeStyle = currentMarca === 'wizard' ? '#d11242' : '#00adef';
+                    ctx.lineWidth = 3 / stk.scale; 
+                    ctx.setLineDash([10 / stk.scale, 10 / stk.scale]);
+                    ctx.strokeRect(-stk.baseW/2 - 20, -stk.baseH/2 - 20, stk.baseW + 40, stk.baseH + 40);
+                    ctx.setLineDash([]); // reseta
+                }
+
+                ctx.restore();
+            });
+        }
+
+        // Função de Design de Alta Performance (Clean & Elegante)
+        function desenharIdentidadeVisual(ctx, marca) {
+            const bottomHeight = 240; // Altura da base da Polaroid
+            const borderSide = 45;    // Largura das bordas laterais e superior
+
+            // 1. Desenhando a Moldura Polaroid Branca
+            ctx.fillStyle = '#ffffff';
+            
+            // Borda Superior
+            ctx.fillRect(0, 0, CANVAS_SIZE, borderSide);
+            // Borda Esquerda
+            ctx.fillRect(0, 0, borderSide, CANVAS_SIZE);
+            // Borda Direita
+            ctx.fillRect(CANVAS_SIZE - borderSide, 0, borderSide, CANVAS_SIZE);
+            // Base inferior da Polaroid (onde vai a legenda)
+            ctx.fillRect(0, CANVAS_SIZE - bottomHeight, CANVAS_SIZE, bottomHeight);
+
+            // 2. Efeito de profundidade: Linha sutil marcando onde a foto termina e a borda começa
+            ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(borderSide, borderSide, CANVAS_SIZE - (borderSide*2), CANVAS_SIZE - bottomHeight - borderSide);
+
+            const hoje = new Date();
+            const dataFormatada = hoje.toLocaleDateString('pt-BR');
+            
+            const textX = borderSide + 35; // Margem esquerda para o texto
+            const logoRightMargin = CANVAS_SIZE - borderSide - 35; // Margem direita para a logo
+            
+            // Posição Y vertical centralizada para os textos na base
+            const hashtagY = CANVAS_SIZE - 125;
+            const dateY = CANVAS_SIZE - 80;
+
+            if (marca === 'wizard') {
+                // Textos à ESQUERDA
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#d11242'; // Vermelho Wizard
+                ctx.font = '900 48px "Montserrat", sans-serif';
+                ctx.fillText('#CheckInWizard', textX, hashtagY);
+                
+                ctx.fillStyle = '#64748b'; // Cinza sutil
+                ctx.font = '600 26px "Inter", sans-serif';
+                ctx.fillText(dataFormatada, textX, dateY);
+
+                // Logo à DIREITA
+                if (logoWizard.complete && logoWizard.naturalHeight !== 0) {
+                    const logoMaxHeight = 120; 
+                    const aspect = logoWizard.naturalWidth / logoWizard.naturalHeight;
+                    let logoWidth = logoMaxHeight * aspect;
+                    let logoHeight = logoMaxHeight;
+
+                    // Limite máximo de largura para a logo não esticar muito
+                    if (logoWidth > 450) {
+                        logoWidth = 450;
+                        logoHeight = logoWidth / aspect;
+                    }
+
+                    const logoX = logoRightMargin - logoWidth;
+                    // Centraliza a logo verticalmente dentro da área da base
+                    const logoY = CANVAS_SIZE - bottomHeight + (bottomHeight / 2) - (logoHeight / 2);
+                    
+                    ctx.drawImage(logoWizard, logoX, logoY, logoWidth, logoHeight);
+                }
+
+            } else {
+                // WizKids - Textos à ESQUERDA
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#00adef'; // Ciano WizKids
+                ctx.font = '900 48px "Montserrat", sans-serif';
+                ctx.fillText('#CheckInWizkids', textX, hashtagY);
+                
+                ctx.fillStyle = '#64748b';
+                ctx.font = '600 26px "Inter", sans-serif';
+                ctx.fillText(dataFormatada, textX, dateY);
+
+                // Logo à DIREITA
+                if (logoWizkids.complete && logoWizkids.naturalHeight !== 0) {
+                    const logoMaxHeight = 110; 
+                    const aspect = logoWizkids.naturalWidth / logoWizkids.naturalHeight;
+                    let logoWidth = logoMaxHeight * aspect;
+                    let logoHeight = logoMaxHeight;
+
+                    // Limite máximo de largura
+                    if (logoWidth > 450) {
+                        logoWidth = 450;
+                        logoHeight = logoWidth / aspect;
+                    }
+
+                    const logoX = logoRightMargin - logoWidth;
+                    const logoY = CANVAS_SIZE - bottomHeight + (bottomHeight / 2) - (logoHeight / 2);
+                    
+                    ctx.drawImage(logoWizkids, logoX, logoY, logoWidth, logoHeight);
+                }
+            }
+        }
+
+        function limparSelecaoAntesDeBaixar() {
+            activeStickerIndex = -1;
+            atualizarUIControlesAdesivo();
+            renderCanvas();
+        }
+
+        baixarBtn.addEventListener('click', () => {
+            if(!imagemUsuario) return;
+            limparSelecaoAntesDeBaixar();
+            
+            // Pequeno delay para garantir que o render sem borda de seleção foi concluído
+            setTimeout(() => {
+                const link = document.createElement('a');
+                const nomeArquivo = currentMarca === 'wizard' ? 'checkin-wizard.png' : 'checkin-wizkids.png';
+                link.download = nomeArquivo;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }, 50);
+        });
+
+        const compartilharBtn = document.getElementById('compartilharBtn');
+        compartilharBtn.addEventListener('click', async () => {
+            if(!imagemUsuario) return;
+            limparSelecaoAntesDeBaixar();
+            
+            setTimeout(async () => {
+                const dataUrl = canvas.toDataURL('image/png');
+                const nomeArquivo = currentMarca === 'wizard' ? 'checkin-wizard.png' : 'checkin-wizkids.png';
+                
+                try {
+                    const res = await fetch(dataUrl);
+                    const blob = await res.blob();
+                    const file = new File([blob], nomeArquivo, { type: 'image/png' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Meu Check-in!',
+                            text: 'Olha minha foto incrível! 🤩 #CheckIn'
+                        });
+                    } else {
+                        alert("Seu navegador (computador) não suporta envio direto. Use o botão 'Baixar' logo ao lado e poste no Instagram! 📸");
+                    }
+                } catch (err) {
+                    console.log("Compartilhamento cancelado ou falhou", err);
+                }
+            }, 50);
+        });
+
+        // Lógica de Câmera
+        btnAbrirCamera.addEventListener('click', async () => {
+            cameraModal.classList.remove('hidden');
+            cameraError.classList.add('hidden');
+            videoStream.classList.remove('hidden');
+            
+            try {
+                streamInfo = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'user', width: { ideal: 1080 }, height: { ideal: 1080 } } 
+                });
+                videoStream.srcObject = streamInfo;
+            } catch (err) {
+                console.error("Erro câmera: ", err);
+                cameraError.classList.remove('hidden');
+                videoStream.classList.add('hidden');
+            }
+        });
+
+        function fecharCamera() {
+            cameraModal.classList.add('hidden');
+            if (streamInfo) {
+                streamInfo.getTracks().forEach(track => track.stop());
+                streamInfo = null;
+            }
+            videoStream.srcObject = null;
+        }
+
+        btnFecharCamera.addEventListener('click', fecharCamera);
+
+        btnCapturar.addEventListener('click', () => {
+            if (!streamInfo) return;
+            
+            // Efeito visual de flash no clique
+            btnCapturar.classList.add('scale-75', 'bg-white');
+            setTimeout(() => btnCapturar.classList.remove('scale-75', 'bg-white'), 100);
+
+            const tempCanvas = document.createElement('canvas');
+            // Força um recorte quadrado da câmera baseado na menor dimensão (para não distorcer)
+            const minDim = Math.min(videoStream.videoWidth, videoStream.videoHeight);
+            tempCanvas.width = minDim;
+            tempCanvas.height = minDim;
+            
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Lógica para cortar o centro do vídeo
+            const sx = (videoStream.videoWidth - minDim) / 2;
+            const sy = (videoStream.videoHeight - minDim) / 2;
+            
+            // Espelhamento
+            tempCtx.translate(tempCanvas.width, 0);
+            tempCtx.scale(-1, 1);
+            
+            tempCtx.drawImage(videoStream, sx, sy, minDim, minDim, 0, 0, minDim, minDim);
+            
+            const img = new Image();
+            img.onload = () => {
+                imagemUsuario = img;
+                
+                baseScale = CANVAS_SIZE / img.width; 
+                zoomControl.value = 1;
+                scale = baseScale;
+                panX = 0;
+                panY = 0;
+                
+                // Reseta tudo ao tirar foto nova
+                placedStickers = [];
+                activeStickerIndex = -1;
+                atualizarUIControlesAdesivo();
+                
+                initialSetup.classList.add('hidden');
+                editorArea.classList.remove('hidden');
+                renderCanvas();
+                
+                fecharCamera();
+            };
+            img.src = tempCanvas.toDataURL('image/jpeg', 0.9);
+        });
+
+        logoWizard.onload = () => { if(imagemUsuario) renderCanvas(); };
+        logoWizkids.onload = () => { if(imagemUsuario) renderCanvas(); };
+
+    </script>
+</body>
+</html>
